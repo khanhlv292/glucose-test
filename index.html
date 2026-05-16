@@ -223,9 +223,19 @@
         </div>
 
         <div class="chart-wrap fade-up">
-          <div class="flex justify-between items-center mb-4">
-            <div class="card-title flex items-center gap-1.5" style="margin-bottom:2px;">
-              <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết (30 lần đo gần nhất)
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+            <div class="card-title flex items-center gap-1.5" style="margin-bottom:0;">
+              <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết
+            </div>
+            <div>
+              <select id="timeFilter" onchange="filterTrendChart()" class="text-xs bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium">
+                <option value="today">Hôm nay</option>
+                <option value="yesterday">Hôm qua</option>
+                <option value="3days">3 ngày qua</option>
+                <option value="7days">7 ngày qua</option>
+                <option value="30days" selected>30 ngày qua</option>
+                <option value="all">Tất cả lịch sử</option>
+              </select>
             </div>
           </div>
           <div class="chart-container">
@@ -377,7 +387,6 @@ function processAndRender(rawData) {
 
       if (!glucoseRaw) return;
 
-      // Xử lý chuyển đổi dấu phẩy ',' thành dấu chấm '.' để parseFloat hiểu chuẩn xác dạng số thập phân
       const glucoseStr   = glucoseRaw.replace(',', '.');
       const glucoseValue = parseFloat(glucoseStr);
 
@@ -397,7 +406,6 @@ function processAndRender(rawData) {
   }
 }
 
-// Khai báo quản lý thực thể biểu đồ toàn cục để hủy phiên bản cũ khi refresh dữ liệu sống
 let glucoseChartInstance = null;
 let tirChartInstance = null;
 let contextChartInstance = null;
@@ -424,8 +432,11 @@ function renderDashboard(rows) {
     ? `<div class="flex gap-1.5 items-start"><i data-lucide="notebook-pen" class="w-4 h-4 text-slate-400 mt-0.5 shrink-0"></i><span>${escHtml(last.note)}</span></div>` 
     : '<div class="text-gray-400 italic">Không có ghi chú.</div>';
 
-  // Thực hiện phân phối vẽ 3 biểu đồ động
-  renderTrendChart(rows.slice(-30));
+  window.allGlucoseRows = rows;
+
+  // Gọi bộ lọc vẽ biểu đồ xu hướng
+  filterTrendChart();
+  
   renderTIRChart(rows);
   renderContextChart(rows);
 
@@ -448,6 +459,44 @@ function renderDashboard(rows) {
   document.getElementById('dashboard').style.display    = 'block';
   
   lucide.createIcons();
+}
+
+// HÀM LỌC DỮ LIỆU ĐỘNG THEO THỜI GIAN
+function filterTrendChart() {
+  if (!window.allGlucoseRows || window.allGlucoseRows.length === 0) return;
+  
+  const filterValue = document.getElementById('timeFilter').value;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+  
+  let filteredRows = window.allGlucoseRows;
+  
+  if (filterValue !== 'all') {
+    filteredRows = window.allGlucoseRows.filter(r => {
+      if (!r.dateStr) return false;
+      const parts = r.dateStr.split('/');
+      if (parts.length !== 3) return false;
+      const rDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      
+      const diffTime = today - rDate;
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (filterValue === 'today') {
+        return diffDays === 0;
+      } else if (filterValue === 'yesterday') {
+        return diffDays === 1;
+      } else if (filterValue === '3days') {
+        return diffDays >= 0 && diffDays < 3;
+      } else if (filterValue === '7days') {
+        return diffDays >= 0 && diffDays < 7; // Lọc đúng dải dữ liệu 7 ngày qua
+      } else if (filterValue === '30days') {
+        return diffDays >= 0 && diffDays < 30;
+      }
+      return true;
+    });
+  }
+  
+  renderTrendChart(filteredRows);
 }
 
 // 1. BIỂU ĐỒ XU HƯỚNG LINE CHART
@@ -504,7 +553,7 @@ function renderTrendChart(chartRows) {
   });
 }
 
-// 2. BIỂU ĐỒ TỶ LỆ ĐẠT MỤC TIÊU (TIR) - DOUGHNUT CHART
+// 2. BIỂU ĐỒ TỶ LỆ ĐẠT MỤC TIÊU (TIR)
 function renderTIRChart(allRows) {
   let low = 0, normal = 0, warn = 0, danger = 0;
   
@@ -547,7 +596,7 @@ function renderTIRChart(allRows) {
   });
 }
 
-// 3. BIỂU ĐỒ TRUNG BÌNH THEO NGỮ CẢNH ĐO - BAR CHART
+// 3. BIỂU ĐỒ TRUNG BÌNH THEO NGỮ CẢNH ĐO
 function renderContextChart(allRows) {
   const groups = {};
   
