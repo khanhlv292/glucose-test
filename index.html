@@ -34,14 +34,20 @@
       color: var(--charcoal);
       min-height: 100vh;
     }
+    
+    /* Tối ưu padding Header linh hoạt cho màn hình nhỏ như iPhone 11 Pro */
     .header-wrap {
       background: linear-gradient(135deg, #0F85FF 0%, #38b6ff 55%, #78C1FF 100%);
-      padding: 28px 36px 24px;
+      padding: 20px 16px; 
       position: relative;
       overflow: hidden;
     }
+    @media (min-width: 640px) {
+      .header-wrap { padding: 28px 36px 24px; }
+    }
+
     .header-title {
-      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-size: clamp(1.35rem, 3vw, 2rem);
       font-weight: 800;
       color: #fff;
       letter-spacing: -0.5px;
@@ -123,10 +129,14 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .fade-up { animation: fadeUp 0.45s ease both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    
     .main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    
+    /* Tối ưu hóa lưới KPI chuyển hẳn về 1 cột trên màn hình siêu nhỏ (iPhone 11 Pro) */
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .kpi-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -228,7 +238,7 @@
               <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết
             </div>
             <div>
-              <select id="timeFilter" onchange="filterTrendChart()" class="text-xs bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium">
+              <select id="timeFilter" onchange="filterTrendChart()" class="text-xs bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium w-full sm:w-auto">
                 <option value="today">Hôm nay</option>
                 <option value="yesterday">Hôm qua</option>
                 <option value="3days">3 ngày qua</option>
@@ -434,7 +444,6 @@ function renderDashboard(rows) {
 
   window.allGlucoseRows = rows;
 
-  // Gọi bộ lọc vẽ biểu đồ xu hướng
   filterTrendChart();
   
   renderTIRChart(rows);
@@ -461,7 +470,6 @@ function renderDashboard(rows) {
   lucide.createIcons();
 }
 
-// HÀM LỌC DỮ LIỆU ĐỘNG THEO THỜI GIAN
 function filterTrendChart() {
   if (!window.allGlucoseRows || window.allGlucoseRows.length === 0) return;
   
@@ -488,7 +496,7 @@ function filterTrendChart() {
       } else if (filterValue === '3days') {
         return diffDays >= 0 && diffDays < 3;
       } else if (filterValue === '7days') {
-        return diffDays >= 0 && diffDays < 7; // Lọc đúng dải dữ liệu 7 ngày qua
+        return diffDays >= 0 && diffDays < 7;
       } else if (filterValue === '30days') {
         return diffDays >= 0 && diffDays < 30;
       }
@@ -499,7 +507,6 @@ function filterTrendChart() {
   renderTrendChart(filteredRows);
 }
 
-// 1. BIỂU ĐỒ XU HƯỚNG LINE CHART
 function renderTrendChart(chartRows) {
   const labels = chartRows.map(r => r.dateStr);
   const values = chartRows.map(r => r.glucoseValue);
@@ -553,7 +560,6 @@ function renderTrendChart(chartRows) {
   });
 }
 
-// 2. BIỂU ĐỒ TỶ LỆ ĐẠT MỤC TIÊU (TIR)
 function renderTIRChart(allRows) {
   let low = 0, normal = 0, warn = 0, danger = 0;
   
@@ -596,7 +602,6 @@ function renderTIRChart(allRows) {
   });
 }
 
-// 3. BIỂU ĐỒ TRUNG BÌNH THEO NGỮ CẢNH ĐO
 function renderContextChart(allRows) {
   const groups = {};
   
