@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
@@ -35,7 +36,6 @@
       min-height: 100vh;
     }
     
-    /* Tối ưu padding Header linh hoạt cho màn hình nhỏ như iPhone 11 Pro */
     .header-wrap {
       background: linear-gradient(135deg, #0F85FF 0%, #38b6ff 55%, #78C1FF 100%);
       padding: 20px 16px; 
@@ -133,7 +133,6 @@
     .main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
     
-    /* Tối ưu hóa lưới KPI chuyển hẳn về 1 cột trên màn hình siêu nhỏ (iPhone 11 Pro) */
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 420px) { .kpi-grid { grid-template-columns: 1fr; } }
@@ -309,6 +308,9 @@ const quotes = [
   "\"Đường huyết ổn định giúp tối ưu năng lượng và duy trì trạng thái cơ thể tốt nhất.\"",
   "\"Mỗi bữa ăn lành mạnh là một sự đầu tư xứng đáng cho tương lai của chính mình.\""
 ];
+
+// Đăng ký plugin hiển thị nhãn dữ liệu một cách toàn cục cho Chart.js v4
+Chart.register(ChartDataLabels);
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dailyQuote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
@@ -518,6 +520,9 @@ function renderTrendChart(chartRows) {
   gradient.addColorStop(0, 'rgba(15,133,255,0.18)');
   gradient.addColorStop(1, 'rgba(15,133,255,0)');
 
+  // Ẩn bớt nhãn dữ liệu nếu có quá nhiều điểm đo tránh đè chữ (ví dụ lọc > 15 điểm)
+  const displayLabels = values.length <= 15;
+
   glucoseChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -537,7 +542,17 @@ function renderTrendChart(chartRows) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        datalabels: {
+          display: displayLabels,
+          align: 'top',
+          anchor: 'end',
+          color: '#4A5568',
+          font: { weight: 'bold', size: 10 },
+          formatter: function(value) { return value.toFixed(1); }
+        }
+      },
       scales: {
         y: { suggestedMin: 3.0, suggestedMax: 10.0 }
       }
@@ -595,6 +610,17 @@ function renderTIRChart(allRows) {
             font: { size: 11, family: 'Segoe UI' },
             padding: 10
           }
+        },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold', size: 11 },
+          formatter: (value, ctx) => {
+            let sum = 0;
+            let dataArr = ctx.chart.data.datasets[0].data;
+            dataArr.map(data => { sum += data; });
+            let percentage = sum > 0 ? (value * 100 / sum).toFixed(0) + "%" : "0%";
+            return value > 0 ? percentage : ''; // Không hiển thị nếu số lượng = 0
+          }
         }
       },
       cutout: '65%'
@@ -636,7 +662,14 @@ function renderContextChart(allRows) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        datalabels: {
+          align: 'end',
+          anchor: 'end',
+          color: '#0F85FF',
+          font: { weight: 'bold', size: 11 },
+          formatter: (value) => value
+        }
       },
       scales: {
         y: {
