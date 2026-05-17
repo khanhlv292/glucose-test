@@ -34,14 +34,20 @@
       color: var(--charcoal);
       min-height: 100vh;
     }
+    
+    /* Tối ưu padding Header linh hoạt cho màn hình nhỏ như iPhone 11 Pro */
     .header-wrap {
       background: linear-gradient(135deg, #0F85FF 0%, #38b6ff 55%, #78C1FF 100%);
-      padding: 28px 36px 24px;
+      padding: 20px 16px; 
       position: relative;
       overflow: hidden;
     }
+    @media (min-width: 640px) {
+      .header-wrap { padding: 28px 36px 24px; }
+    }
+
     .header-title {
-      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-size: clamp(1.35rem, 3vw, 2rem);
       font-weight: 800;
       color: #fff;
       letter-spacing: -0.5px;
@@ -104,6 +110,7 @@
     .badge-low     { background: #EDE9FF; color: #6C4DEF; }
     .chart-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px 22px; }
     .chart-container { position: relative; height: 270px; }
+    .sub-chart-container { position: relative; height: 200px; }
     .history-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
     .history-table thead th {
       background: linear-gradient(135deg, #EEF6FF, #E6F8FC);
@@ -122,10 +129,14 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .fade-up { animation: fadeUp 0.45s ease both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    
     .main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    
+    /* Tối ưu hóa lưới KPI chuyển hẳn về 1 cột trên màn hình siêu nhỏ (iPhone 11 Pro) */
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .kpi-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -222,15 +233,43 @@
         </div>
 
         <div class="chart-wrap fade-up">
-          <div class="flex justify-between items-center mb-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+            <div class="card-title flex items-center gap-1.5" style="margin-bottom:0;">
+              <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết
+            </div>
             <div>
-              <div class="card-title flex items-center gap-1.5" style="margin-bottom:2px;">
-                <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết
-              </div>
+              <select id="timeFilter" onchange="filterTrendChart()" class="text-xs bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium w-full sm:w-auto">
+                <option value="today">Hôm nay</option>
+                <option value="yesterday">Hôm qua</option>
+                <option value="3days">3 ngày qua</option>
+                <option value="7days">7 ngày qua</option>
+                <option value="30days" selected>30 ngày qua</option>
+                <option value="all">Tất cả lịch sử</option>
+              </select>
             </div>
           </div>
           <div class="chart-container">
             <canvas id="glucoseChart"></canvas>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="chart-wrap fade-up">
+            <div class="card-title flex items-center gap-1.5 mb-4">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-blue-500"></i> Tỷ Lệ Đạt Mục Tiêu (Time In Range)
+            </div>
+            <div class="sub-chart-container">
+              <canvas id="tirChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-wrap fade-up">
+            <div class="card-title flex items-center gap-1.5 mb-4">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-500"></i> Trung Bình Theo Ngữ Cảnh Đo
+            </div>
+            <div class="sub-chart-container">
+              <canvas id="contextChart"></canvas>
+            </div>
           </div>
         </div>
 
@@ -283,7 +322,6 @@ async function loadData() {
 
   let logs = [];
 
-  // 1. THỬ NGHIỆM FETCH TRỰC TIẾP
   try {
     const res = await fetch(SHEET_CSV_URL);
     if (res.ok) { 
@@ -296,7 +334,6 @@ async function loadData() {
     } else { logs.push(`Direct Fetch: Lỗi HTTP ${res.status}`); }
   } catch(e) { logs.push(`Direct Fetch: Bị chặn CORS (${e.message})`); }
 
-  // 2. THỬ NGHIỆM QUA PROXY CORSPROXY.IO
   try {
     const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(SHEET_CSV_URL)}`);
     if (res.ok) { 
@@ -309,7 +346,6 @@ async function loadData() {
     } else { logs.push(`CorsProxy: Lỗi HTTP ${res.status}`); }
   } catch(e) { logs.push(`CorsProxy: Thất bại (${e.message})`); }
 
-  // 3. THỬ NGHIỆM QUA PROXY ALLORIGINS
   try {
     const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(SHEET_CSV_URL)}`);
     if (res.ok) { 
@@ -322,7 +358,6 @@ async function loadData() {
     } else { logs.push(`AllOrigins: Lỗi kết nối`); }
   } catch(e) { logs.push(`AllOrigins: Thất bại (${e.message})`); }
 
-  // NẾU TẤT CẢ THẤT BẠI
   showError(`Ứng dụng không nhận được dữ liệu CSV chuẩn từ các nguồn kết nối công khai.\n\n[Nhật ký hệ thống]:\n${logs.join('\n')}\n\n*Gợi ý: Hãy tiến hành đưa file index.html này lên GitHub Pages như hướng dẫn ở bước trước. Khi chạy trên môi trường internet thật (https://), trình duyệt sẽ kích hoạt chế độ tải trực tiếp an toàn từ Google Sheet mà không cần đi qua proxy trung gian nữa!`);
 }
 
@@ -381,8 +416,11 @@ function processAndRender(rawData) {
   }
 }
 
+let glucoseChartInstance = null;
+let tirChartInstance = null;
+let contextChartInstance = null;
+
 function renderDashboard(rows) {
-  const chartRows = rows.slice(-30);
   const total = rows.length;
   const avg   = rows.reduce((s, r) => s + r.glucoseValue, 0) / total;
   const last  = rows[rows.length - 1];
@@ -404,7 +442,12 @@ function renderDashboard(rows) {
     ? `<div class="flex gap-1.5 items-start"><i data-lucide="notebook-pen" class="w-4 h-4 text-slate-400 mt-0.5 shrink-0"></i><span>${escHtml(last.note)}</span></div>` 
     : '<div class="text-gray-400 italic">Không có ghi chú.</div>';
 
-  renderChart(chartRows);
+  window.allGlucoseRows = rows;
+
+  filterTrendChart();
+  
+  renderTIRChart(rows);
+  renderContextChart(rows);
 
   const recent = rows.slice(-5).reverse();
   const tbody  = document.getElementById('historyBody');
@@ -424,14 +467,49 @@ function renderDashboard(rows) {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('dashboard').style.display    = 'block';
   
-  // Quét và kích hoạt lại toàn bộ Lucide Icons sau khi DOM dựng xong
   lucide.createIcons();
 }
 
-let glucoseChartInstance = null;
-function renderChart(rows) {
-  const labels = rows.map(r => r.dateStr);
-  const values = rows.map(r => r.glucoseValue);
+function filterTrendChart() {
+  if (!window.allGlucoseRows || window.allGlucoseRows.length === 0) return;
+  
+  const filterValue = document.getElementById('timeFilter').value;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+  
+  let filteredRows = window.allGlucoseRows;
+  
+  if (filterValue !== 'all') {
+    filteredRows = window.allGlucoseRows.filter(r => {
+      if (!r.dateStr) return false;
+      const parts = r.dateStr.split('/');
+      if (parts.length !== 3) return false;
+      const rDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      
+      const diffTime = today - rDate;
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (filterValue === 'today') {
+        return diffDays === 0;
+      } else if (filterValue === 'yesterday') {
+        return diffDays === 1;
+      } else if (filterValue === '3days') {
+        return diffDays >= 0 && diffDays < 3;
+      } else if (filterValue === '7days') {
+        return diffDays >= 0 && diffDays < 7;
+      } else if (filterValue === '30days') {
+        return diffDays >= 0 && diffDays < 30;
+      }
+      return true;
+    });
+  }
+  
+  renderTrendChart(filteredRows);
+}
+
+function renderTrendChart(chartRows) {
+  const labels = chartRows.map(r => r.dateStr);
+  const values = chartRows.map(r => r.glucoseValue);
   const ctx = document.getElementById('glucoseChart').getContext('2d');
   
   if (glucoseChartInstance) glucoseChartInstance.destroy();
@@ -482,6 +560,97 @@ function renderChart(rows) {
   });
 }
 
+function renderTIRChart(allRows) {
+  let low = 0, normal = 0, warn = 0, danger = 0;
+  
+  allRows.forEach(r => {
+    if (r.glucoseValue < THRESHOLD_LOW) low++;
+    else if (r.glucoseValue < THRESHOLD_WARN) normal++;
+    else if (r.glucoseValue < THRESHOLD_HIGH) warn++;
+    else danger++;
+  });
+
+  const ctx = document.getElementById('tirChart').getContext('2d');
+  if (tirChartInstance) tirChartInstance.destroy();
+
+  tirChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Thấp (<3.9)', 'Bình thường', 'Hơi cao', 'Cao (≥7.8)'],
+      datasets: [{
+        data: [low, normal, warn, danger],
+        backgroundColor: ['#6C4DEF', '#1DA462', '#E5920A', '#E54C4C'],
+        borderWidth: 2,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            boxWidth: 12,
+            font: { size: 11, family: 'Segoe UI' },
+            padding: 10
+          }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+function renderContextChart(allRows) {
+  const groups = {};
+  
+  allRows.forEach(r => {
+    const typeLabel = r.type ? r.type.trim() : 'Chưa phân loại';
+    if (!groups[typeLabel]) {
+      groups[typeLabel] = { sum: 0, count: 0 };
+    }
+    groups[typeLabel].sum += r.glucoseValue;
+    groups[typeLabel].count++;
+  });
+
+  const labels = Object.keys(groups);
+  const averages = labels.map(l => (groups[l].sum / groups[l].count).toFixed(1));
+
+  const ctx = document.getElementById('contextChart').getContext('2d');
+  if (contextChartInstance) contextChartInstance.destroy();
+
+  contextChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: averages,
+        backgroundColor: 'rgba(15, 133, 255, 0.8)',
+        hoverBackgroundColor: '#0F85FF',
+        borderRadius: 6,
+        barThickness: 24
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'mmol/L', font: { size: 10 } }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
 function glucoseColor(v) {
   if (v < THRESHOLD_LOW)  return '#6C4DEF';  
   if (v < THRESHOLD_WARN) return '#1DA462';  
@@ -490,7 +659,6 @@ function glucoseColor(v) {
 }
 
 function glucoseBadge(v) {
-  // Loại bỏ các emoji hình tròn màu thô cũ, giữ lại màu nền badge tinh tế chuẩn SaaS
   if (v < THRESHOLD_LOW)  return `<span class="glucose-badge badge-low">Thấp</span>`;
   if (v < THRESHOLD_WARN) return `<span class="glucose-badge badge-normal">Bình thường</span>`;
   if (v < THRESHOLD_HIGH) return `<span class="glucose-badge badge-warn">Hơi cao</span>`;
