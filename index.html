@@ -8,9 +8,160 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <style>  <!--GG apps script xử lý dữ liệu đường no/đói-->
+.ai-summary-section {
+  margin-top: 32px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+}
+
+.ai-summary-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+}
+
+.ai-summary-header p {
+  margin: 0 0 18px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.ai-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ai-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.ai-card-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.ai-card-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  word-break: break-word;
+}
+
+.ai-panel {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.ai-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.ai-panel-body {
+  font-size: 14px;
+  color: #111827;
+  line-height: 1.6;
+}
+
+.ai-last-5 {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-row {
+  padding: 12px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+.ai-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.ai-row-meta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.ai-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ai-badge.low {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ai-badge.normal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ai-badge.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ai-row-note {
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.ai-row-insight {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.ai-error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .ai-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .ai-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+  </style>  <!--GG apps script xử lý dữ liệu đường no/đói-->
+
   <style>
     @font-face {
       font-family: 'Aptos Display';
@@ -35,19 +186,14 @@
       color: var(--charcoal);
       min-height: 100vh;
     }
-    
     .header-wrap {
       background: linear-gradient(135deg, #0F85FF 0%, #38b6ff 55%, #78C1FF 100%);
-      padding: 20px 16px; 
+      padding: 28px 36px 24px;
       position: relative;
       overflow: hidden;
     }
-    @media (min-width: 640px) {
-      .header-wrap { padding: 28px 36px 24px; }
-    }
-
     .header-title {
-      font-size: clamp(1.35rem, 3vw, 2rem);
+      font-size: clamp(1.5rem, 3vw, 2rem);
       font-weight: 800;
       color: #fff;
       letter-spacing: -0.5px;
@@ -129,13 +275,10 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .fade-up { animation: fadeUp 0.45s ease both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-    
     .main-grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
-    
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 420px) { .kpi-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -232,19 +375,9 @@
         </div>
 
         <div class="chart-wrap fade-up">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
-            <div class="card-title flex items-center gap-1.5" style="margin-bottom:0;">
-              <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết
-            </div>
-            <div>
-              <select id="timeFilter" onchange="filterTrendChart()" class="text-xs bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium w-full sm:w-auto">
-                <option value="today">Hôm nay</option>
-                <option value="yesterday">Hôm qua</option>
-                <option value="3days">3 ngày qua</option>
-                <option value="7days">7 ngày qua</option>
-                <option value="30days" selected>30 ngày qua</option>
-                <option value="all">Tất cả lịch sử</option>
-              </select>
+          <div class="flex justify-between items-center mb-4">
+            <div class="card-title flex items-center gap-1.5" style="margin-bottom:2px;">
+              <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Xu Hướng Đường Huyết (30 lần đo gần nhất)
             </div>
           </div>
           <div class="chart-container">
@@ -296,6 +429,53 @@
   </div>
 </div>
 
+<section id="ai-summary-section" class="ai-summary-section">  <!--GG apps script xử lý dữ liệu đường no/đói-->
+  <div class="ai-summary-header">
+    <h2>Đánh giá AI & Norm</h2>
+    <p>Gợi ý đánh giá từ chỉ số đo và thời điểm đo lúc no/đói.</p>
+  </div>
+
+  <div class="ai-summary-grid">
+    <div class="ai-card">
+      <div class="ai-card-label">Cập nhật lúc</div>
+      <div id="ai-updated-at" class="ai-card-value">--</div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-card-label">Tổng số lần đo</div>
+      <div id="ai-total-count" class="ai-card-value">--</div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-card-label">Đường huyết trung bình</div>
+      <div id="ai-average" class="ai-card-value">--</div>
+    </div>
+
+    <div class="ai-card">
+      <div class="ai-card-label">Lần đo gần nhất</div>
+      <div id="ai-latest" class="ai-card-value">--</div>
+    </div>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-title">Norm đang dùng</div>
+    <div id="ai-norm" class="ai-panel-body">--</div>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-title">Nhận xét lần đo gần nhất</div>
+    <div id="ai-latest-insight" class="ai-panel-body">--</div>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-title">5 lần đo gần nhất</div>
+    <div id="ai-last-5" class="ai-last-5"></div>
+  </div>
+
+  <div id="ai-error" class="ai-error" style="display:none;"></div>
+</section>  <!--GG apps script xử lý dữ liệu đường no/đói-->
+
+
 <script>
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTDHbh0EEq8x1x87poyvwlKE9wvVrYnFhojGAAS17HVQqF2yvFCU6NMuZOOsg1DjTg4Eocq47Q3Yrie/pub?gid=0&single=true&output=csv";
 
@@ -308,9 +488,6 @@ const quotes = [
   "\"Đường huyết ổn định giúp tối ưu năng lượng và duy trì trạng thái cơ thể tốt nhất.\"",
   "\"Mỗi bữa ăn lành mạnh là một sự đầu tư xứng đáng cho tương lai của chính mình.\""
 ];
-
-// Đăng ký plugin hiển thị nhãn dữ liệu một cách toàn cục cho Chart.js v4
-Chart.register(ChartDataLabels);
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('dailyQuote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
@@ -399,6 +576,7 @@ function processAndRender(rawData) {
 
       if (!glucoseRaw) return;
 
+      // Xử lý chuyển đổi dấu phẩy ',' thành dấu chấm '.' để parseFloat hiểu chuẩn xác dạng số thập phân
       const glucoseStr   = glucoseRaw.replace(',', '.');
       const glucoseValue = parseFloat(glucoseStr);
 
@@ -418,6 +596,7 @@ function processAndRender(rawData) {
   }
 }
 
+// Khai báo quản lý thực thể biểu đồ toàn cục để hủy phiên bản cũ khi refresh dữ liệu sống
 let glucoseChartInstance = null;
 let tirChartInstance = null;
 let contextChartInstance = null;
@@ -444,10 +623,8 @@ function renderDashboard(rows) {
     ? `<div class="flex gap-1.5 items-start"><i data-lucide="notebook-pen" class="w-4 h-4 text-slate-400 mt-0.5 shrink-0"></i><span>${escHtml(last.note)}</span></div>` 
     : '<div class="text-gray-400 italic">Không có ghi chú.</div>';
 
-  window.allGlucoseRows = rows;
-
-  filterTrendChart();
-  
+  // Thực hiện phân phối vẽ 3 biểu đồ động
+  renderTrendChart(rows.slice(-30));
   renderTIRChart(rows);
   renderContextChart(rows);
 
@@ -472,43 +649,7 @@ function renderDashboard(rows) {
   lucide.createIcons();
 }
 
-function filterTrendChart() {
-  if (!window.allGlucoseRows || window.allGlucoseRows.length === 0) return;
-  
-  const filterValue = document.getElementById('timeFilter').value;
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
-  
-  let filteredRows = window.allGlucoseRows;
-  
-  if (filterValue !== 'all') {
-    filteredRows = window.allGlucoseRows.filter(r => {
-      if (!r.dateStr) return false;
-      const parts = r.dateStr.split('/');
-      if (parts.length !== 3) return false;
-      const rDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-      
-      const diffTime = today - rDate;
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (filterValue === 'today') {
-        return diffDays === 0;
-      } else if (filterValue === 'yesterday') {
-        return diffDays === 1;
-      } else if (filterValue === '3days') {
-        return diffDays >= 0 && diffDays < 3;
-      } else if (filterValue === '7days') {
-        return diffDays >= 0 && diffDays < 7;
-      } else if (filterValue === '30days') {
-        return diffDays >= 0 && diffDays < 30;
-      }
-      return true;
-    });
-  }
-  
-  renderTrendChart(filteredRows);
-}
-
+// 1. BIỂU ĐỒ XU HƯỚNG LINE CHART
 function renderTrendChart(chartRows) {
   const labels = chartRows.map(r => r.dateStr);
   const values = chartRows.map(r => r.glucoseValue);
@@ -519,9 +660,6 @@ function renderTrendChart(chartRows) {
   const gradient = ctx.createLinearGradient(0, 0, 0, 270);
   gradient.addColorStop(0, 'rgba(15,133,255,0.18)');
   gradient.addColorStop(1, 'rgba(15,133,255,0)');
-
-  // Ẩn bớt nhãn dữ liệu nếu có quá nhiều điểm đo tránh đè chữ (ví dụ lọc > 15 điểm)
-  const displayLabels = values.length <= 15;
 
   glucoseChartInstance = new Chart(ctx, {
     type: 'line',
@@ -542,17 +680,7 @@ function renderTrendChart(chartRows) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { 
-        legend: { display: false },
-        datalabels: {
-          display: displayLabels,
-          align: 'top',
-          anchor: 'end',
-          color: '#4A5568',
-          font: { weight: 'bold', size: 10 },
-          formatter: function(value) { return value.toFixed(1); }
-        }
-      },
+      plugins: { legend: { display: false } },
       scales: {
         y: { suggestedMin: 3.0, suggestedMax: 10.0 }
       }
@@ -575,6 +703,7 @@ function renderTrendChart(chartRows) {
   });
 }
 
+// 2. BIỂU ĐỒ TỶ LỆ ĐẠT MỤC TIÊU (TIR) - DOUGHNUT CHART
 function renderTIRChart(allRows) {
   let low = 0, normal = 0, warn = 0, danger = 0;
   
@@ -610,17 +739,6 @@ function renderTIRChart(allRows) {
             font: { size: 11, family: 'Segoe UI' },
             padding: 10
           }
-        },
-        datalabels: {
-          color: '#fff',
-          font: { weight: 'bold', size: 11 },
-          formatter: (value, ctx) => {
-            let sum = 0;
-            let dataArr = ctx.chart.data.datasets[0].data;
-            dataArr.map(data => { sum += data; });
-            let percentage = sum > 0 ? (value * 100 / sum).toFixed(0) + "%" : "0%";
-            return value > 0 ? percentage : ''; // Không hiển thị nếu số lượng = 0
-          }
         }
       },
       cutout: '65%'
@@ -628,6 +746,7 @@ function renderTIRChart(allRows) {
   });
 }
 
+// 3. BIỂU ĐỒ TRUNG BÌNH THEO NGỮ CẢNH ĐO - BAR CHART
 function renderContextChart(allRows) {
   const groups = {};
   
@@ -662,14 +781,7 @@ function renderContextChart(allRows) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
-        datalabels: {
-          align: 'end',
-          anchor: 'end',
-          color: '#0F85FF',
-          font: { weight: 'bold', size: 11 },
-          formatter: (value) => value
-        }
+        legend: { display: false }
       },
       scales: {
         y: {
@@ -709,5 +821,101 @@ function showError(msg) {
   lucide.createIcons();
 }
 </script>
+
+<script>  <!--GG apps script xử lý dữ liệu đường no/đói-->
+const AI_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_o4KEEXj7Ar1-dBPhSi8xBxyt8MP6BW9yJeKaSSJXIGxJ5o8LJWMNNTlUHAE0yuHu/exec';
+
+async function loadAiSummary() {
+  const errorBox = document.getElementById('ai-error');
+
+  try {
+    const res = await fetch(AI_SCRIPT_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Không tải được dữ liệu AI');
+
+    const data = await res.json();
+    renderAiSummary(data);
+    errorBox.style.display = 'none';
+  } catch (err) {
+    errorBox.textContent = 'Không tải được khối AI: ' + err.message;
+    errorBox.style.display = 'block';
+  }
+}
+
+function renderAiSummary(data) {
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const summary = data.summary || {};
+  const latest = rows.length ? rows[rows.length - 1] : null;
+
+  document.getElementById('ai-updated-at').textContent = formatDateTimeDisplay(data.updatedAt);
+  document.getElementById('ai-total-count').textContent = summary.count ?? rows.length ?? '--';
+  document.getElementById('ai-average').textContent = formatGlucose(summary.avg);
+  document.getElementById('ai-latest').textContent = latest
+    ? `${formatGlucose(latest.Glucose)} (${latest.Type || '--'})`
+    : '--';
+
+  document.getElementById('ai-norm').textContent = renderNormText(data.norm);
+  document.getElementById('ai-latest-insight').textContent = latest
+    ? latest.noteInsight || 'Chưa có nhận xét.'
+    : '--';
+
+  renderLastFive(rows.slice(-5));
+}
+
+function renderNormText(norm) {
+  if (!norm) return '--';
+  const fastingMin = norm.fastingMin ?? '--';
+  const fastingMax = norm.fastingMax ?? '--';
+  const postMealMin = norm.postMealMin ?? '--';
+  const postMealMax = norm.postMealMax ?? '--';
+
+  return `Lúc đói: ${fastingMin} - ${fastingMax} mmol/L. Sau ăn: ${postMealMin} - ${postMealMax} mmol/L.`;
+}
+
+function renderLastFive(rows) {
+  const wrap = document.getElementById('ai-last-5');
+  if (!rows.length) {
+    wrap.innerHTML = '<div class="ai-row">Chưa có dữ liệu.</div>';
+    return;
+  }
+
+  wrap.innerHTML = rows.map(r => `
+    <div class="ai-row">
+      <div class="ai-row-top">
+        <div class="ai-row-meta">${escapeHtml(r.Date || '')} ${escapeHtml(r.Time || '')}</div>
+        <div class="ai-badge ${escapeHtml(r.status || '')}">${escapeHtml(r.status || '--')}</div>
+      </div>
+      <div class="ai-row-note">
+        <strong>${formatGlucose(r.Glucose)}</strong> mmol/L · ${escapeHtml(r.Type || '--')}
+      </div>
+      <div class="ai-row-insight">${escapeHtml(r.noteInsight || 'Chưa có nhận xét.')}</div>
+      <div class="ai-row-insight" style="margin-top:6px;color:#6b7280;">
+        Ghi chú: ${escapeHtml(r.Note || '--')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function formatGlucose(v) {
+  const n = Number(v);
+  if (!isFinite(n)) return '--';
+  return n.toFixed(2).replace('.', ',');
+}
+
+function formatDateTimeDisplay(v) {
+  if (!v) return '--';
+  return String(v);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+document.addEventListener('DOMContentLoaded', loadAiSummary);
+</script> <!--GG apps script xử lý dữ liệu đường no/đói-->
 </body>
 </html>
